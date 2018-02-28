@@ -1,7 +1,8 @@
 package net.rehacktive.waspdbexample;
 
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -14,10 +15,11 @@ import net.rehacktive.waspdb.WaspHash;
 import net.rehacktive.waspdb.WaspListener;
 import net.rehacktive.waspdb.WaspObserver;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends AppCompatActivity {
 
     ProgressBar progressBar;
     // wasp objects
@@ -61,6 +63,10 @@ public class MainActivity extends ActionBarActivity {
                     };
 
                     hash.register(observer);
+                }
+
+                public void onError(String error) {
+                    Log.e(WaspFactory.class.getSimpleName(),error);
                 }
             });
         }

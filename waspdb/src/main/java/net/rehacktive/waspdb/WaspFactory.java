@@ -1,11 +1,16 @@
 package net.rehacktive.waspdb;
 
 import android.os.AsyncTask;
+import android.util.Log;
+
+import com.esotericsoftware.kryo.pool.KryoFactory;
 
 import net.rehacktive.waspdb.internals.collision.KryoStoreUtils;
 import net.rehacktive.waspdb.internals.collision.CipherManager;
 import net.rehacktive.waspdb.internals.utils.Salt;
 import net.rehacktive.waspdb.internals.utils.Utils;
+
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 
@@ -107,6 +112,24 @@ public class WaspFactory {
         }
     }
 
+    public static boolean removeDatabase(String path, String name) {
+        try {
+            if (existsDatabase(path, name)) {
+                WaspDb db = new WaspDb();
+                db.setPath(path);
+                db.setName(name);
+                String directory;
+                directory = db.getPath() + "/" + db.getName();
+                File dir = new File(directory);
+                FileUtils.deleteDirectory(dir);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return true;
+
+    }
     protected static WaspDb createDatabase(final String path, final String name, final String password)  {
         if(password!=null && !Utils.checkForCryptoAvailable()) return null;
         Salt salt = Utils.generateSalt();
@@ -154,6 +177,7 @@ public class WaspFactory {
         }
     }
 
+
     protected static WaspDb loadDatabase(final String path, final String name, final String password) {
         if(password!=null && !Utils.checkForCryptoAvailable()) return null;
         CipherManager cipherManager = null;
@@ -162,16 +186,19 @@ public class WaspFactory {
             WaspDb db;
 
             Salt salt = (Salt) KryoStoreUtils.readFromDisk(path + "/" + realname +"/"+SALT_NAME,Salt.class, null);
-            if(!Utils.isEmpty(password))
-                cipherManager = CipherManager.getInstance(password.toCharArray(),salt.getSalt());
-            db = (WaspDb) KryoStoreUtils.readFromDisk(path + "/" + realname + "/" + DB_NAME, WaspDb.class, cipherManager);
 
+            if(!Utils.isEmpty(password)) {
+                cipherManager = CipherManager.getInstance(password.toCharArray(), salt.getSalt());
+            }
+
+            db = (WaspDb) KryoStoreUtils.readFromDisk(path + "/" + realname + "/" + DB_NAME, WaspDb.class, cipherManager);
             db.setPath(path); // refresh the path to the current one
             db.setCipherManager(cipherManager); // set the password in the object
             return db;
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            Log.e("WaspDb","exception in kryostoreutils.readfromdisk - destroy db and try create");
+            removeDatabase(path,name);
+            return createDatabase(path,name,password);
         }
     }
 
